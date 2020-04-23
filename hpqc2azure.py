@@ -394,6 +394,3 @@ if __name__ == "__main__":
         user_stories(sys.argv[2], sys.argv[3])
     else:
         print(usage)
-    # bugs_new(input_file='bugs_new.csv')
-    # bugs_update(input_file='bugs_update.csv')
-    # test_cases('samples_mto/hpqc_test_cases.html', 'azure', 'OINP defect migration PoC\Archive')
