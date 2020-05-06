@@ -38,7 +38,7 @@ Utility to convert HPQC data (defects, requirements, test cases) to Azure DevOps
 html file from HPQC can be converted automatically.
 
  # Usage Example
- `python.py defects from_hpqc.csv iteration_1` 
+ `python.py defects from_hpqc.csv area_1` 
  
  Azure DevOps compatible `from_hpqc_out.csv` will be generated beside input file.
  

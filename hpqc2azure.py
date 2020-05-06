@@ -5,24 +5,14 @@ import itertools
 import csv
 
 
-def defects(hpqc_csv_file, iteration):
+def defects(hpqc_csv_file, area):
     df = pandas.read_csv(hpqc_csv_file)
-    """
-    Title
-    Changed Date
-    Created Date
-    Priority
-    Severity
-    Tag (Detected By,Target Release,Defect Type,Component)
-    Repro Steps (=Description)
-    State
-    Reason
-    """
+
     # Work Item Type
     df['Work Item Type'] = 'Bug'
 
-    # Iteration
-    df['Iteration Path'] = iteration
+    # Area
+    df['Area Path'] = area
 
     # Rename
     df.rename(columns={"Summary": "Title", "Modified Date": "Changed Date", "Detected on Date": "Created Date",
@@ -56,14 +46,17 @@ def defects(hpqc_csv_file, iteration):
     df.drop(columns=["Changed Date", "Created Date"], inplace=True)
 
     # Tags
+    '''
     df['Tags'] = "from_hpqc"
-    # df['Detected By'] = 'hpqc_detected_by=' + df['Detected By']
+    df['Detected By'] = 'hpqc_detected_by=' + df['Detected By']
     df['Target Release'] = 'hpqc_target_release=' + df['Target Release']
     df['Defect Type'] = 'hpqc_defect_Type=' + df['Defect Type']
     df['Component'] = 'hpqc_component=' + df['Component']
     df['Status'] = 'hpqc_status=' + df['Status']
     df['Tags'] = df['Tags'].str.cat(df[['Target Release', 'Defect Type', 'Component', 'Status']],
                                     sep=';', na_rep='')
+    '''
+    df['Tags'] = 'x_hpqc_release=' + df['Target Release']
 
     # Status
     df.rename(columns={"Status": "System Info"}, inplace=True)
@@ -125,7 +118,7 @@ def defects_update(azure_csv):
     print('bugs_update(%s) is completed.' % azure_csv)
 
 
-def user_stories(hpqc_csv_file, iteration):
+def user_stories(hpqc_csv_file, area):
     df = pandas.read_csv(hpqc_csv_file)
     """
     Work Item Type = 'User Story'
@@ -140,8 +133,8 @@ def user_stories(hpqc_csv_file, iteration):
     # Work Item Type
     df['Work Item Type'] = 'User Story'
 
-    # Iteration
-    df['Iteration Path'] = iteration
+    # Area
+    df['Area Path'] = area
 
     # Title
     df.rename(columns={"Name": "Title"}, inplace=True)
@@ -169,23 +162,25 @@ def user_stories(hpqc_csv_file, iteration):
         inplace=True)
 
     # Tags
+    '''
     df['Tags'] = 'from_hpqc'
     # df['Author'] = 'hpqc_Author=' + df['Author']
     df['Req Type'] = 'hpqc_req_type=' + df['Req Type']
     df['Target Release'] = 'hpqc_target_release=' + df['Target Release']
     # df['Related Application'] = 'hpqc_Related_Application=' + df['Related Application']
     df['Requirement Status'] = 'hpqc_status=' + df['Requirement Status']
-
     df['Tags'] = df['Tags'].str.cat(
         df[['Req Type', 'Target Release', 'Requirement Status']],
         sep=';', na_rep='')
+    '''
+    df['Tags'] = 'x_hpqc_release=' + df['Target Release']
 
     # State
     df.rename(columns={"Requirement Status": "Acceptance Criteria"}, inplace=True)
 
     # Drop extra columns
     df = df[['Work Item Type', 'Title', 'Acceptance Criteria', 'Priority', 'Description', 'Value Area', 'Tags',
-             'Iteration Path']]
+             'Area Path']]
 
     # write CSV files
     write_csv_file(df, hpqc_csv_file.split('.csv')[0] + "_out_{i}.csv")
@@ -219,7 +214,7 @@ def user_stories_update(azure_csv_file):
     print('bugs_update(%s) is completed.' % azure_csv_file)
 
 
-def test_cases(hpqc_html_file, iteration, schema='azure'):
+def test_cases(hpqc_html_file, area, schema='azure'):
     # Input
     f = open(hpqc_html_file, 'r', encoding='utf-8')
     soup = BeautifulSoup(f.read(), 'html.parser')
@@ -237,7 +232,7 @@ def test_cases(hpqc_html_file, iteration, schema='azure'):
                       'design_steps']
     elif schema == 'azure':
         output_file = hpqc_html_file.split('.')[0] + '_' + schema + '.csv'
-        fieldnames = ['Work Item Type', 'Title', 'State', 'Tags', 'Description', 'Steps', 'Iteration Path']
+        fieldnames = ['Work Item Type', 'Title', 'State', 'Description', 'Steps', 'Area Path', 'Assigned to']
     else:
         raise Exception('format expected (hpqc or azure)')
 
@@ -337,12 +332,12 @@ def test_cases(hpqc_html_file, iteration, schema='azure'):
 
             writer.writerow({
                 'Work Item Type': 'Test Case',
-                'Tags': 'from_hpqc',
                 'Title': test_name,
                 'State': 'Design',
                 'Description': description,
                 'Steps': design_steps,
-                'Iteration Path': iteration
+                'Area Path': area,
+                'Assigned to': ''
             })
 
             print('test case #%i OK ----------------------- ' % test_case_counter)
@@ -376,7 +371,7 @@ if __name__ == "__main__":
     usage = 'Usage: python hpqc2azure.py <arguments>. Arguments:' \
             '\n\t -method [defects | defects_update | user_stories | user_stories_update | test_cases]' \
             '\n\t -input file' \
-            '\n\t -iteration'
+            '\n\t -area'
 
     if len(sys.argv) != 4:
         print(usage)
@@ -391,6 +386,6 @@ if __name__ == "__main__":
     elif sys.argv[1] == 'user_stories_update':
         user_stories_update(sys.argv[2])
     elif sys.argv[1] == 'test_cases':
-        user_stories(sys.argv[2], sys.argv[3])
+        test_cases(sys.argv[2], sys.argv[3])
     else:
         print(usage)
